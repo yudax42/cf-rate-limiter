@@ -78,10 +78,10 @@ export default {
       return new Response(RATE_LIMITED_MESSAGE, { status: 429 });
     }
 
-    // Do the actual work.
+    // Do the actual work. replace this with your own logic
     return new Response(
       JSON.stringify({
-        "SUCCESS": true,
+        "success": true,
       })
     );
   },
