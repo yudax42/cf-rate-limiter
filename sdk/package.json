@@ -1,13 +1,15 @@
 {
   "name": "cf-rate-limiter",
   "description": "A rate limiter for Cloudflare Workers",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "main": "dist/index.node.js",
   "module": "dist/index.esm.js",
   "browser": "dist/index.browser.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "node build.mjs"
+    "build": "node build.mjs",
+    "publish": "npm run build && npm publish",
+    "patch": "npm version patch && npm run publish"
   },
   "files": [
     "/dist"
@@ -18,5 +20,10 @@
   "devDependencies": {
     "esbuild": "^0.19.4",
     "typescript": "^5.2.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yudax42/cf-rate-limiter",
+    "directory": "dist"
   }
 }
