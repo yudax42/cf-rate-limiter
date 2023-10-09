@@ -1,7 +1,7 @@
 {
   "name": "cf-rate-limiter",
   "description": "A rate limiter for Cloudflare Workers",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "main": "dist/index.node.js",
   "module": "dist/index.esm.js",
   "browser": "dist/index.browser.js",
