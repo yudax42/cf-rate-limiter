@@ -1,60 +1,105 @@
 import {
-  ACTION_PER_SECONDS,
-  GRACE_PERIOD,
+  ACTION_PER_INTERVAL,
+  INTERVAL_DURATION_SEC,
   RATE_LIMITED_MESSAGE,
 } from "./constants";
+import { Reply } from "./helpers";
 
 export interface Env {
   limiter: DurableObjectNamespace;
 }
 
+interface Box {
+  tokens: number;
+  lastRefillTime: number;
+}
+
+interface CheckLimitParams {
+  actions: number;
+  interval: number;
+}
+
 export class RateLimiter {
-  next_allowed_time: number;
+  state: DurableObjectState;
 
   constructor(state: DurableObjectState, env: Env) {
-    this.next_allowed_time = 0;
-  }
-
-  private get_cooldown(now: number) {
-    return Math.max(0, this.next_allowed_time - now - GRACE_PERIOD);
+    this.state = state;
   }
 
   async fetch(request: Request) {
-    let now = Date.now() / 1000;
-
-    this.next_allowed_time = Math.max(now, this.next_allowed_time);
-
     if (request.method == "POST") {
-      this.next_allowed_time += ACTION_PER_SECONDS;
+      const body = await request.json();
+      const { actions, interval } = body as CheckLimitParams;
+
+      let box = await this.state.storage.get("box") as Box;
+      
+      if (!box) {
+        box = {
+          tokens: actions,
+          lastRefillTime: Date.now(),
+        };
+
+        await this.state.storage.put("box", box);
+      }
+
+      let { tokens, lastRefillTime } = box;
+
+      let now = Date.now();
+      let timePassed = now - lastRefillTime;
+
+      if (timePassed >= interval * 1000) {
+        tokens = actions;
+        lastRefillTime = now;
+
+        await this.state.storage.put("box", {
+          tokens,
+          lastRefillTime,
+        });
+      }
+
+      if (tokens > 0) {
+        tokens -= 1;
+        await this.state.storage.put("box", {
+          tokens,
+          lastRefillTime,
+        });
+
+        return new Response(null, { status: 200 });
+      } else {
+        return new Response(null, { status: 429 });
+      }
+
     }
-
-    const cooldown = this.get_cooldown(now);
-
-    return new Response(cooldown.toString());
   }
 }
 
 class RateLimitHandler {
   limiter: DurableObjectStub;
   in_cooldown: boolean;
+
   constructor(limiterStub: DurableObjectStub) {
     this.limiter = limiterStub;
     this.in_cooldown = false;
   }
 
-  private async call_limiter() {
+  private async call_limiter(params: CheckLimitParams) {
     try {
       let response = await this.limiter.fetch("https://ratelimiter", {
         method: "POST",
+        body: JSON.stringify(params),
       });
-      let cooldown = +(await response.text());
 
-      this.in_cooldown = cooldown > 0;
+      if (response.status == 429) {
+        this.in_cooldown = true;
+      } else {
+        this.in_cooldown = false;
+      }
+  
     } catch (err: unknown) {}
   }
 
-  public async check_limit() {
-    await this.call_limiter();
+  public async check_limit(params: CheckLimitParams) {
+    await this.call_limiter(params);
 
     return !this.in_cooldown;
   }
@@ -66,23 +111,44 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ): Promise<Response> {
-    const ip = request.headers.get("CF-Connecting-IP");
 
-    const limiter_id = env.limiter.idFromName(ip!);
-    const limiter_stub = env.limiter.get(limiter_id);
-    const limiter = new RateLimitHandler(limiter_stub);
+    if(request.method == "POST") {
+      // get the identifier query param
+      const url = new URL(request.url);
+      const identifier = url.searchParams.get("identifier");
+      const actions = url.searchParams.get("actions") || ACTION_PER_INTERVAL
+      const interval = url.searchParams.get("interval") || INTERVAL_DURATION_SEC
 
-    const check_limit = await limiter.check_limit();
+      if (!identifier) {
+        return Reply.json({
+          message: "Identifier not provided",
+        }, 400);
+      }
+      
+      const limiter_id = env.limiter.idFromName(identifier);
+      const limiter_stub = env.limiter.get(limiter_id);
+      const limiter = new RateLimitHandler(limiter_stub);
 
-    if (!check_limit) {
-      return new Response(RATE_LIMITED_MESSAGE, { status: 429 });
+      const check_limit = await limiter.check_limit({
+        actions: Number(actions),
+        interval: Number(interval),
+      });
+
+      if (!check_limit) {
+        return Reply.json({
+          message: RATE_LIMITED_MESSAGE,
+        }, 429, {
+          'X-RateLimit-Limit': `${actions} actions per ${interval} seconds`,
+        });
+      }
+
+      return Reply.json({
+        message: 'Action allowed'
+      })
     }
 
-    // Do the actual work. replace this with your own logic
-    return new Response(
-      JSON.stringify({
-        "success": true,
-      })
-    );
+    return Reply.json({
+      message: "Method not allowed",
+    }, 405);
   },
 };
