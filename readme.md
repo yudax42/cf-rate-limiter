@@ -10,7 +10,7 @@ npm install cf-rate-limiter
 
 ## Usage
 ```javascript
-import { RateLimiterClient } from 'your-package-name';
+import { RateLimiterClient } from 'cf-rate-limiter';
 
 const client = new RateLimiterClient({
   url: 'https://your-rate-limiter-url.com',
