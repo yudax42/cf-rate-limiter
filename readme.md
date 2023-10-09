@@ -2,30 +2,28 @@
 
 A simple rate limiter implemented using Cloudflare Workers and Durable Objects to protect your web application by limiting the number of requests a client can make within a specified timeframe.
 
-## How to use
+## Installation
 
-1. Install the dependencies:
-
-```
-npm install
+```bash
+npm install cf-rate-limiter
 ```
 
-2. Edit the constants in `./constants` to set your desired rate limits, grace period, and rate limited messages:
-
+## Usage
 ```javascript
-export const ACTION_PER_SECONDS = 1;
-export const GRACE_PERIOD = 5;
-export const RATE_LIMITED_MESSAGE = "You have exceeded the rate limit. Please wait and try again.";
-```
+import { RateLimiterClient } from 'your-package-name';
 
-3. Start a local development server:
+const client = new RateLimiterClient({
+  url: 'https://your-rate-limiter-url.com',
+  identifier: 'your-identifier', // IP, User ID, etc.
+  actions: 10, // Number of actions allowed within the interval
+  interval: 60, // Interval in seconds
+});
 
-```
-npm run start
-```
+async function checkRateLimit() {
+  const isAllowed = await client.checkLimit();
+  console.log(isAllowed);  // true or false
+}
 
-4. Deploy to Cloudflare Workers:
+checkRateLimit();
 
-```
-npm run deploy
 ```
