@@ -15,8 +15,15 @@ await esbuild.build({
   bundle: true,
   platform: 'browser',
   outfile: 'dist/index.browser.js',
-  globalName: 'RateLimiterSDK',
-  define: { 'process.env.NODE_ENV': '"production"' },
+});
+
+// buid for esm
+await esbuild.build({
+  entryPoints: ['src/index.ts'],
+  bundle: true,
+  format: 'esm',
+  outfile: 'dist/index.esm.js',
+  external: ['node-fetch'],
 });
 
 console.log('Build completed');
