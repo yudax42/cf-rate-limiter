@@ -5,7 +5,7 @@ interface RateLimiterOptions {
   interval: number;
 }
 
-export default class CFRateLimiter {
+class CFRateLimiter {
   private url: string;
   private identifier: string;
   private actions: number;
@@ -30,3 +30,4 @@ export default class CFRateLimiter {
   }
 }
 
+export { CFRateLimiter }

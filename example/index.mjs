@@ -1,19 +1,7 @@
-# Cloudflare Rate Limiter 
-## WIP 🚧
-
-A simple rate limiter implemented using Cloudflare Workers and Durable Objects to protect your web application by limiting the number of requests a client can make within a specified timeframe.
-
-## Installation
-
-```bash
-npm install cf-rate-limiter
-```
-
-## Usage
-```javascript
 import limiter from 'cf-rate-limiter';
 
 const { default: CFRateLimiter } = limiter;
+
 
 const client = new CFRateLimiter({
   url: 'https://domain.com', // Worker URL
@@ -28,5 +16,3 @@ async function checkRateLimit() {
 }
 
 checkRateLimit();
-
-```
