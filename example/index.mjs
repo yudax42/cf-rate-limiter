@@ -1,7 +1,4 @@
-import limiter from 'cf-rate-limiter';
-
-const { default: CFRateLimiter } = limiter;
-
+import { CFRateLimiter } from 'cf-rate-limiter';
 
 const client = new CFRateLimiter({
   url: 'https://domain.com', // Worker URL
