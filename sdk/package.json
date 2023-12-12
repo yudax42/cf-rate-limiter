@@ -1,7 +1,7 @@
 {
   "name": "cf-rate-limiter",
   "description": "A rate limiter for Cloudflare Workers",
-  "version": "1.0.7",
+  "version": "1.0.10",
   "main": "dist/index.esm.js",
   "module": "dist/index.esm.js",
   "browser": "dist/index.browser.js",
@@ -9,7 +9,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:types": "tsc --emitDeclarationOnly --declaration --project tsconfig.json",
     "build": "node build.mjs && npm run build:types",
-    "publish": "npm run build && npm publish",
+    "publish": "npm run build && npm publish --access public",
     "patch": "npm version patch && npm run publish"
   },
   "files": [
